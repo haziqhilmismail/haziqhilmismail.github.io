@@ -8,7 +8,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%B2%3C/text%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@500;700;800&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400;0,500;0,700;0,800;1,400&family=Alegreya+Sans:wght@500;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
       --paper: #fbfbf7;
@@ -18,7 +18,7 @@
       --faded: #6a6a66;
       --link: #1d5c8c;
       --brass: #f0cf6e;
-      --hand: "Caveat", "Comic Sans MS", cursive;
+      --text: "Alegreya", Georgia, serif;
       --label: "Alegreya Sans", system-ui, sans-serif;
     }
     * { box-sizing: border-box; }
@@ -26,7 +26,7 @@
       margin: 0;
       min-height: 100vh;
       color: var(--ink);
-      font: 500 1.25rem/1.3 var(--hand);
+      font: 400 1.05rem/1.45 var(--text);
       /* Battle map: a grassy field with a 5 ft grid. Grass texture: ambientCG Grass005, CC0 */
       background-color: #4a6b26;
       background-image:
@@ -59,9 +59,6 @@
       letter-spacing: 0.06em;
       color: var(--ink);
     }
-    /* Pencil writing: graphite grey with a soft edge */
-    .sheet { text-shadow: 0 0 0.6px rgba(40, 42, 46, 0.5); }
-    .lbl, .skills li { text-shadow: none; }
 
     /* A box with its title set into the top border */
     .box { position: relative; border: 1.5px solid var(--ink); border-radius: 10px; padding: 1.1rem 1rem 0.8rem; }
@@ -69,9 +66,9 @@
 
     /* Header */
     .top { display: grid; grid-template-columns: 1fr 1.6fr; gap: 1.5rem; align-items: end; }
-    .name h1 { font: 700 3.2rem/1 var(--hand); border-bottom: 1.5px solid var(--ink); padding-bottom: 0.1rem; }
+    .name h1 { font: 800 2.5rem/1.1 var(--text); border-bottom: 1.5px solid var(--ink); padding-bottom: 0.1rem; }
     .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem 1.5rem; }
-    .fields p { font-size: 1.5rem; line-height: 1.15; border-bottom: 1px solid var(--ink); }
+    .fields p { font-size: 1.15rem; line-height: 1.35; border-bottom: 1px solid var(--ink); }
     .name .lbl, .fields .lbl { display: block; margin-top: 0.2rem; }
 
     /* Ability scores */
@@ -81,11 +78,11 @@
       padding: 0.55rem 0.3rem 1rem; position: relative;
     }
     .ability .lbl { display: block; font-size: 0.62rem; min-height: 1.6em; }
-    .ability .mod { display: block; font: 700 2.6rem/1.05 var(--hand); }
+    .ability .mod { display: block; font: 700 2rem/1.25 var(--text); }
     .ability .score {
       position: absolute; left: 50%; bottom: -0.8rem; transform: translateX(-50%);
       width: 2.8rem; border: 1.5px solid var(--ink); border-radius: 50%; background: var(--paper);
-      font-size: 1.2rem; line-height: 1.2;
+      font-size: 0.95rem; line-height: 1.5;
     }
 
     .body { display: grid; grid-template-columns: 1fr 1.55fr; gap: 1.6rem 1.5rem; align-items: start; }
@@ -93,10 +90,10 @@
 
     /* Skills */
     .bonus { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem; }
-    .bonus span:first-child { font: 700 1.6rem/1 var(--hand); border: 1.5px solid var(--ink); border-radius: 8px; padding: 0.2rem 0.5rem; }
+    .bonus span:first-child { font: 700 1.25rem/1 var(--text); border: 1.5px solid var(--ink); border-radius: 8px; padding: 0.2rem 0.5rem; }
     .skills { list-style: none; margin: 0; padding: 0; }
     .skills li { display: flex; align-items: baseline; gap: 0.45rem; font: 500 0.9rem/1.7 var(--label); color: var(--ink); }
-    .skills .v { flex: 0 0 1.9rem; text-align: center; border-bottom: 1px solid var(--ink); font: 500 1.2rem/1.1 var(--hand); color: var(--pencil); }
+    .skills .v { flex: 0 0 1.9rem; text-align: center; border-bottom: 1px solid var(--ink); font: 500 0.95rem/1.35 var(--text); color: var(--pencil); }
     .skills small { color: var(--faded); font-size: 0.72rem; margin-left: auto; }
     .dot { flex: 0 0 0.65rem; height: 0.65rem; border: 1.3px solid var(--ink); border-radius: 50%; align-self: center; }
     .dot.on { background: var(--pencil); }
@@ -105,9 +102,12 @@
 
     /* Experience, projects, personality */
     .entry + .entry { margin-top: 0.9rem; }
-    .entry h3 { font: 700 1.55rem/1.1 var(--hand); }
+    .entry h3 { font: 700 1.15rem/1.3 var(--text); }
     .entry .when { display: block; margin: 0.1rem 0 0.15rem; font: 500 0.75rem/1.3 var(--label); color: var(--faded); text-transform: uppercase; letter-spacing: 0.05em; }
-    .entry p { font-size: 1.3rem; line-height: 1.2; }
+    .entry p { font-size: 1rem; line-height: 1.5; }
+    .points { margin: 0.3rem 0 0; padding-left: 1.1rem; }
+    .points li { margin-bottom: 0.4rem; line-height: 1.5; }
+    .points li::marker { color: var(--faded); }
     /* Screenshot pinned to the sheet */
     .shot { display: block; margin: 0.5rem 0 0.6rem; }
     .shot img, .shot video {
@@ -115,11 +115,11 @@
       border: 1.5px solid var(--ink); border-radius: 6px;
       box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
     }
-    .traits { display: grid; grid-template-columns: 1fr 1fr; gap: 1.4rem 1rem; }
+    .traits { display: grid; gap: 0.9rem; }
     .equipment { margin-top: 1.6rem; }
     .projects { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; align-items: start; }
     .projects .entry + .entry { margin-top: 0; }
-    .traits p { font-size: 1.25rem; line-height: 1.2; }
+    .traits p { font-size: 1rem; line-height: 1.5; }
 
     /* Under the sheet */
     footer { margin-top: 2.5rem; text-align: center; color: var(--paper); font-family: var(--label); text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6); }
@@ -208,27 +208,6 @@
           <h2 class="lbl">Other proficiencies</h2>
           <p>MySQL, Redshift, DynamoDB, TrueNAS, Caddy, Tailscale, Vercel, Fly.io, Git, Jira. CCNA: Introduction to Networks (Cisco).</p>
         </section>
-      </div>
-
-      <div class="col">
-        <section class="box">
-          <h2 class="lbl">Experience</h2>
-          <div class="entry">
-            <h3>Data Engineer, Webqlo</h3>
-            <span class="when">Aug 2024 to now</span>
-            <p>I build ETL pipelines on Microsoft Fabric, schedule about 2,000 jobs a day with Apache Airflow, and run a 10-node Kubernetes cluster with FastAPI services.</p>
-          </div>
-          <div class="entry">
-            <h3>Data Engineer Intern, AXRAIL</h3>
-            <span class="when">Jul to Dec 2022</span>
-            <p>IoT sensor data for more than 20 stores, AWS QuickSight dashboards, and AWS maintenance scripts.</p>
-          </div>
-          <div class="entry">
-            <h3>BSc Computer Science (AI), Universiti Malaya</h3>
-            <span class="when">2020 to 2024</span>
-            <p>CGPA 3.75. Dean's List in 5 of 7 semesters. Champion of UM Hackathon 2022.</p>
-          </div>
-        </section>
 
         <section class="box">
           <h2 class="lbl">Personality</h2>
@@ -237,6 +216,39 @@
             <div><span class="lbl">Ideal</span><p>Simple first. Use the standard tool before a custom one.</p></div>
             <div><span class="lbl">Bond</span><p>My family uses my home server every day.</p></div>
             <div><span class="lbl">Flaw</span><p>I cannot walk past a box of Magic cards without pricing it.</p></div>
+          </div>
+        </section>
+      </div>
+
+      <div class="col">
+        <section class="box">
+          <h2 class="lbl">Experience</h2>
+          <div class="entry">
+            <h3>Data Scientist / Data Engineer, Webqlo</h3>
+            <span class="when">Aug 2024 to now</span>
+            <ul class="points">
+              <li>Moved an enterprise client's data platform from SQL Server to Microsoft Fabric. I built the ETL pipelines on a medallion architecture: raw data lands in a Lakehouse, gets cleaned, and ends in a curated Warehouse layer.</li>
+              <li>Wrote SQL stored procedures on the curated layer that feed the client's dashboards for sales, customer feedback and employee analytics, with KPIs such as sales against budget, survey NPS, audit scores and staff turnover.</li>
+              <li>Built a read-only query service over the Fabric SQL endpoint, so people can ask data questions in plain language through AI assistants. Each query must be a single <code>SELECT</code>, results stop at 1,000 rows, and the connection itself is read-only.</li>
+              <li>Built a crawler that collects social media posts, mentions and comments through RapidAPI and stores them in MongoDB.</li>
+              <li>Moved the crawl pipeline from cron jobs to Apache Airflow. It now runs about 2,000 crawl jobs a day, and a failed task shows its own error and retries by itself, so nobody has to SSH into each worker to debug it.</li>
+              <li>Set up a self-hosted Kubernetes cluster on 10 mini PCs. It serves the FastAPI endpoints that Airflow calls for data processing, and I watch its health in Headlamp.</li>
+            </ul>
+          </div>
+          <div class="entry">
+            <h3>Data Engineer Intern, AXRAIL</h3>
+            <span class="when">Jul to Dec 2022</span>
+            <ul class="points">
+              <li>Built an IoT sensor data capture system for more than 20 convenience stores, which stored thousands of sensor readings.</li>
+              <li>Built AWS QuickSight dashboards on that sensor data.</li>
+              <li>Tested a mobile app before its release to more than 1 million users.</li>
+              <li>Wrote AWS backend maintenance scripts for patching and CRUD operations.</li>
+            </ul>
+          </div>
+          <div class="entry">
+            <h3>BSc Computer Science (AI), Universiti Malaya</h3>
+            <span class="when">2020 to 2024</span>
+            <p>CGPA 3.75. Dean's List in 5 of 7 semesters. Champion of UM Hackathon 2022.</p>
           </div>
         </section>
       </div>
