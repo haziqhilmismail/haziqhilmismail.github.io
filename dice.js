@@ -569,9 +569,72 @@ document.getElementById("roll-all").addEventListener("click", () => {
   toys.filter((t) => t.die).forEach(rollInPlace);
 });
 
+// ---------- Easter egg: stack the dice ----------
+
+const GOALS = [5, 7];
+const counter = document.getElementById("stack-counter");
+const win = document.getElementById("stack-win");
+let bestStack = Number(localStorage.getItem("bestStack")) || 0;
+let shownStack = 0;
+const celebrated = new Set();
+
+// Height of the tallest tower of dice that are standing still.
+// A die is on another die when it is close to it sideways and higher by about one die.
+function tallestStack() {
+  const still = toys.filter((t) =>
+    t.die && (!drag || drag.toy !== t) &&
+    t.body.velocity.length() < 0.3 && t.body.angularVelocity.length() < 0.6);
+  still.sort((a, b) => a.body.position.y - b.body.position.y);
+  const level = new Map();
+  let tallest = 0;
+  for (const t of still) {
+    const p = t.body.position;
+    let l = 1;
+    for (const [under, lu] of level) {
+      const q = under.body.position;
+      const close = Math.hypot(p.x - q.x, p.z - q.z) < (t.die.radius + under.die.radius) * 0.75;
+      const rise = p.y - q.y;
+      if (close && rise > 0.35 && rise < t.die.radius + under.die.radius + 0.1) l = Math.max(l, lu + 1);
+    }
+    level.set(t, l);
+    tallest = Math.max(tallest, l);
+  }
+  return tallest;
+}
+
+function celebrate(height) {
+  const all = height >= 7;
+  win.querySelector("h2").textContent = all ? "All 7 dice in one tower!" : `A tower of ${height} dice!`;
+  win.querySelector(".win-text").textContent = all
+    ? "That is a natural 20 on patience. Send me a screenshot, I want to see it."
+    : "Most visitors only throw the dice. Can you stack all 7? The d4 has to go on top.";
+  if (!win.open) win.showModal();
+}
+
+function updateStack() {
+  const height = tallestStack();
+  if (height === shownStack) return;
+  shownStack = height;
+  if (height >= 2) counter.hidden = false; // the counter stays hidden until the first stack
+  if (height > bestStack) {
+    bestStack = height;
+    localStorage.setItem("bestStack", String(bestStack));
+  }
+  const next = GOALS.find((g) => g > bestStack) ?? "7, done";
+  counter.querySelector(".now").textContent = height;
+  counter.querySelector(".best").textContent = bestStack;
+  counter.querySelector(".goal").textContent = next;
+  const reached = GOALS.filter((g) => height >= g && !celebrated.has(g));
+  if (reached.length) {
+    reached.forEach((g) => celebrated.add(g));
+    celebrate(height);
+  }
+}
+
 // ---------- Main loop ----------
 
 let last = performance.now();
+let stackTick = 0;
 function frame(now) {
   const dt = Math.min((now - last) / 1000, 1 / 20);
   last = now;
@@ -612,6 +675,7 @@ function frame(now) {
   }
   if (awake) renderer.render(scene, camera);
   dirty = false;
+  if (++stackTick % 15 === 0) updateStack(); // four times a second is enough
   requestAnimationFrame(frame);
 }
 
