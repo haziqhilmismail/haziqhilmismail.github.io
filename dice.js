@@ -3,8 +3,9 @@
 import * as THREE from "three";
 import * as CANNON from "cannon-es";
 
-const PX = 50;           // CSS pixels per world unit
-const LIFT = 1.8;        // height of a die while you hold it
+// CSS pixels per world unit. Fewer on a phone, so the dice are smaller there.
+const PX = window.innerWidth < 600 ? 38 : 50;
+const LIFT = 0.25;       // gap under a die while you hold it
 const DIE_COLOR = 0x9b1c2e;
 const INK_COLOR = "#f4d77e";
 
@@ -279,9 +280,15 @@ scene.add(ground);
 const world = new CANNON.World({ gravity: new CANNON.Vec3(0, -60, 0), allowSleep: true });
 const tableMaterial = new CANNON.Material("table");
 const diceMaterial = new CANNON.Material("dice");
-world.addContactMaterial(new CANNON.ContactMaterial(tableMaterial, diceMaterial, { friction: 0.35, restitution: 0.35 }));
+world.addContactMaterial(new CANNON.ContactMaterial(tableMaterial, diceMaterial, { friction: 0.5, restitution: 0.3 }));
+// More solver passes, so a tower of dice does not jitter and fall by itself
+world.solver.iterations = 30;
 // Grippy and not bouncy between dice, so a stack stays up
-world.addContactMaterial(new CANNON.ContactMaterial(diceMaterial, diceMaterial, { friction: 0.6, restitution: 0.1 }));
+world.addContactMaterial(new CANNON.ContactMaterial(diceMaterial, diceMaterial, {
+  friction: 0.5, restitution: 0.05,
+  contactEquationStiffness: 1e7, contactEquationRelaxation: 4, // stiff contacts sink less into each other
+  frictionEquationStiffness: 1e7,
+}));
 
 function staticPlane(rotate) {
   const body = new CANNON.Body({ type: CANNON.Body.STATIC, shape: new CANNON.Plane(), material: tableMaterial });
@@ -307,7 +314,7 @@ function followScroll() {
   cameraScroll = window.scrollY;
   const z = (cameraScroll + window.innerHeight / 2) / PX;
   camera.position.z = z;
-  sun.position.set(-8, 24, z - 10);
+  sun.position.set(-3, 30, z - 4); // nearly overhead, so a lifted die's shadow stays under it
   sun.target.position.set(0, 0, z);
   dirty = true;
 }
@@ -349,14 +356,28 @@ const toys = [];
 let dirty = true;
 
 function addToy(toy, body) {
-  body.sleepSpeedLimit = 0.25;
-  body.sleepTimeLimit = 0.35;
-  body.linearDamping = 0.15;
-  body.angularDamping = 0.15;
+  // A toy that stays almost still falls asleep soon, which freezes a finished tower in place
+  body.sleepSpeedLimit = 0.3;
+  body.sleepTimeLimit = 0.25;
+  body.linearDamping = 0.2;
+  body.angularDamping = 0.35;
   toy.body = body;
   toy.group.traverse((o) => (o.userData.toy = toy));
   scene.add(toy.group);
   world.addBody(body);
+  toy.lastClack = 0;
+  body.addEventListener("collide", (e) => {
+    const other = toys.find((t) => t.body === e.body);
+    if (other && other.body.id < body.id) return; // one sound per pair of toys
+    const wooden = !toy.die || (other && !other.die); // the pencil is in this hit
+    const speed = Math.abs(e.contact.getImpactVelocityAlongNormal());
+    const now = performance.now();
+    if (speed < 1.2 || now - toy.lastClack < (wooden ? 80 : 50)) return;
+    toy.lastClack = now;
+    const volume = Math.min(1, (speed - 1) / 12);
+    if (wooden) knock(volume);
+    else clack(volume, toy.die.shape);
+  });
   toys.push(toy);
 }
 
@@ -384,13 +405,13 @@ function createToys() {
   addToy({ ...pencil, die: null }, body);
 }
 
-// Start in the side margins on wide screens, at the bottom of the page on narrow ones.
+// Start in the side margins on wide screens, and under the footer on narrow ones.
 // x and y here are page pixels.
 function placeToys() {
   const sheet = document.querySelector(".sheet").getBoundingClientRect();
   const W = window.innerWidth;
   const top = sheet.top + window.scrollY;
-  const pageH = document.documentElement.scrollHeight;
+  const below = document.querySelector("footer").getBoundingClientRect().bottom + window.scrollY;
   const dice = toys.filter((t) => t.die);
   const pencil = toys.find((t) => !t.die);
   const put = (toy, x, y, yaw = 0) => {
@@ -412,10 +433,26 @@ function placeToys() {
     });
     put(pencil, W - right / 2, top + 520, Math.PI / 2.4);
   } else {
-    const step = Math.min(64, (W - 40) / 7);
-    dice.forEach((toy, i) => put(toy, W / 2 + (i - 3) * step, pageH - 50));
-    put(pencil, W / 2, pageH - 110, 0.15);
+    // Two rows of dice (4 and 3) and the pencil under them
+    const step = Math.min(80, (W - 40) / 4);
+    dice.forEach((toy, i) => {
+      const row = i < 4 ? 0 : 1;
+      const col = row ? i - 4 : i;
+      put(toy, W / 2 + (col - (row ? 1 : 1.5)) * step, below + 50 + row * 70);
+    });
+    put(pencil, W / 2, below + 175, 0.15);
   }
+}
+
+// Until a visitor touches a toy, put the toys back in their start places whenever the page
+// changes height (fonts and images make the page taller after the first layout)
+let touched = false;
+let placedFor = 0;
+function placeIfUntouched() {
+  const height = document.documentElement.scrollHeight;
+  if (touched || height === placedFor) return;
+  placedFor = height;
+  placeToys();
 }
 
 // ---------- Rolling ----------
@@ -490,6 +527,7 @@ function startDrag(e) {
   const toy = toyAt(e.clientX, e.clientY);
   if (!toy) return;
   e.preventDefault();
+  touched = true;
   const p = screenToWorld(e.clientX, e.clientY);
   drag = {
     toy, clientX: e.clientX, clientY: e.clientY, startX: e.clientX, startY: e.clientY, moved: false,
@@ -542,20 +580,40 @@ function endDrag() {
   if (toy.die) { toy.rolling = true; toy.inThrow = true; toy.glow = 0; }
 }
 
-// Hold a toy just above whatever is under it, so you can drop it onto a stack
+// How far a toy reaches below and above its centre in its current rotation, from its real corners
 const reachOf = (toy) => (toy.die ? toy.die.radius : 1.8);
-const heightOf = (toy) => (toy.die ? toy.die.radius : 0.15);
+const turned = new THREE.Quaternion();
+const corner = new THREE.Vector3();
+function verticalReach(toy) {
+  if (!toy.die) return { down: 0.15, up: 0.15 };
+  const q = toy.body.quaternion;
+  turned.set(q.x, q.y, q.z, q.w);
+  let down = 0, up = 0;
+  for (const v of toy.verts) {
+    const y = corner.copy(v).applyQuaternion(turned).y;
+    down = Math.max(down, -y);
+    up = Math.max(up, y);
+  }
+  return { down, up };
+}
+
+// Hold a toy just above whatever is under it (or just above the table), so the drop onto a stack
+// is short and the toy's shadow stays close to it
 function holdHeight(toy, x, z) {
   let top = 0;
   for (const other of toys) {
     if (other === toy) continue;
     const p = other.body.position;
-    if (Math.hypot(p.x - x, p.z - z) < reachOf(toy) + reachOf(other) * 0.9) top = Math.max(top, p.y + heightOf(other));
+    if (Math.hypot(p.x - x, p.z - z) < reachOf(toy) + reachOf(other) * 0.9) top = Math.max(top, p.y + verticalReach(other).up);
   }
-  return Math.max(LIFT, top + heightOf(toy) + 0.25);
+  return top + verticalReach(toy).down + LIFT;
 }
 
 window.addEventListener("pointerdown", startDrag);
+// While a toy is held, stop the browser's own drag ("ghost" image) and text selection of the page under it
+for (const type of ["dragstart", "selectstart"]) {
+  window.addEventListener(type, (e) => { if (drag) e.preventDefault(); });
+}
 window.addEventListener("pointermove", moveDrag);
 window.addEventListener("pointerup", endDrag);
 window.addEventListener("pointercancel", endDrag);
@@ -566,75 +624,202 @@ window.addEventListener("touchstart", (e) => {
 }, { passive: false });
 
 document.getElementById("roll-all").addEventListener("click", () => {
+  touched = true;
   toys.filter((t) => t.die).forEach(rollInPlace);
 });
 
+// ---------- Sound ----------
+
+// Browsers only allow audio after a click or tap, so the audio starts on the first one
+let audio = null;
+window.addEventListener("pointerdown", () => {
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctx) return;
+  audio ??= new Ctx();
+  if (audio.state !== "running") audio.resume().catch(() => {});
+}, { capture: true, passive: true });
+
+// Dice hits: single clicks cut from "SFX Pack - Rolling Dice" by Halfwits & Failed Crits (CC0),
+// one recording of a single roll for each die type. Every click in a recording becomes one hit
+// sound for that die. The d% uses the d10 recording.
+const clicks = {};
+
+// A click is a 5 ms window that is much louder than the 30 ms before it
+function findClicks(buffer) {
+  const x = buffer.getChannelData(0);
+  const size = Math.floor(buffer.sampleRate * 0.005);
+  const windows = [];
+  for (let i = 0; i < x.length; i += size) {
+    let p = 0;
+    for (let j = i; j < Math.min(i + size, x.length); j++) p = Math.max(p, Math.abs(x[j]));
+    windows.push(p);
+  }
+  const peak = Math.max(...windows);
+  const found = [];
+  for (let k = 0; k < windows.length; k++) {
+    const before = Math.max(0, ...windows.slice(Math.max(0, k - 6), k));
+    if (windows[k] > peak * 0.12 && windows[k] > before * 3) {
+      found.push({ buffer, at: Math.max(0, (k * size) / buffer.sampleRate - 0.002), loud: windows[k] / peak });
+    }
+  }
+  return found;
+}
+
+async function loadClicks() {
+  const decoder = new OfflineAudioContext(1, 1, 44100); // an AudioBuffer works in any audio context
+  await Promise.all(["d4", "d6", "d8", "d10", "d12", "d20"].map(async (shape) => {
+    try {
+      const response = await fetch(`assets/sounds/roll-${shape}.wav`);
+      clicks[shape] = findClicks(await decoder.decodeAudioData(await response.arrayBuffer()));
+    } catch {
+      // That die stays silent if its file does not load
+    }
+  }));
+}
+loadClicks();
+
+// Pencil hits: Kenney's CC0 recordings of light knocks on wood, one knock per file
+let knocks = [];
+(async () => {
+  try {
+    const decoder = new OfflineAudioContext(1, 1, 44100);
+    knocks = await Promise.all([0, 1, 2, 3, 4].map(async (n) => {
+      const response = await fetch(`assets/sounds/impactWood_light_00${n}.ogg`);
+      return decoder.decodeAudioData(await response.arrayBuffer());
+    }));
+  } catch {
+    // No pencil sound in browsers that cannot decode Ogg
+  }
+})();
+
+function knock(volume) {
+  if (!audio || audio.state !== "running" || !knocks.length || volume < 0.03) return;
+  const source = audio.createBufferSource();
+  const gain = audio.createGain();
+  source.buffer = knocks[Math.floor(Math.random() * knocks.length)];
+  source.playbackRate.value = 1.1 + Math.random() * 0.3; // a pencil is lighter than a plank
+  gain.gain.value = volume * 0.7;
+  source.connect(gain).connect(audio.destination);
+  source.start();
+}
+
+function clack(volume, shape) {
+  const own = clicks[shape] ?? [];
+  if (!audio || audio.state !== "running" || !own.length || volume < 0.03) return;
+  const click = own[Math.floor(Math.random() * own.length)];
+  const source = audio.createBufferSource();
+  const gain = audio.createGain();
+  source.buffer = click.buffer;
+  source.playbackRate.value = 0.9 + Math.random() * 0.25;
+  const now = audio.currentTime;
+  gain.gain.setValueAtTime(Math.min(1, volume / click.loud) * 0.8, now); // quiet clicks are boosted to match
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+  source.connect(gain).connect(audio.destination);
+  source.start(now, click.at, 0.1);
+}
+
 // ---------- Easter egg: stack the dice ----------
 
-const GOALS = [5, 7];
-const counter = document.getElementById("stack-counter");
+const ALL_DICE = 7;
 const win = document.getElementById("stack-win");
-let bestStack = Number(localStorage.getItem("bestStack")) || 0;
 let shownStack = 0;
-const celebrated = new Set();
+let celebrated = false;
 
-// Height of the tallest tower of dice that are standing still.
-// A die is on another die when it is close to it sideways and higher by about one die.
-function tallestStack() {
-  const still = toys.filter((t) =>
-    t.die && (!drag || drag.toy !== t) &&
-    t.body.velocity.length() < 0.3 && t.body.angularVelocity.length() < 0.6);
-  still.sort((a, b) => a.body.position.y - b.body.position.y);
-  const level = new Map();
-  let tallest = 0;
-  for (const t of still) {
-    const p = t.body.position;
-    let l = 1;
-    for (const [under, lu] of level) {
-      const q = under.body.position;
-      const close = Math.hypot(p.x - q.x, p.z - q.z) < (t.die.radius + under.die.radius) * 0.75;
-      const rise = p.y - q.y;
-      if (close && rise > 0.35 && rise < t.die.radius + under.die.radius + 0.1) l = Math.max(l, lu + 1);
-    }
-    level.set(t, l);
-    tallest = Math.max(tallest, l);
+// Progress sound: a short marimba-like note, one step higher for each level of the tower
+
+const SCALE = [523.25, 587.33, 659.25, 783.99, 880, 1046.5]; // C major pentatonic, levels 2 to 7
+
+function note(freq, at, volume = 0.25) {
+  // A sine wave plus a quieter one 4 times higher, both fading out fast
+  for (const [mult, level] of [[1, volume], [4, volume * 0.25]]) {
+    const osc = audio.createOscillator();
+    const gain = audio.createGain();
+    osc.frequency.value = freq * mult;
+    gain.gain.setValueAtTime(0.0001, at);
+    gain.gain.exponentialRampToValueAtTime(level, at + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, at + (mult === 1 ? 0.7 : 0.25));
+    osc.connect(gain).connect(audio.destination);
+    osc.start(at);
+    osc.stop(at + 0.75);
   }
+}
+
+function playProgress(height) {
+  if (!audio || audio.state !== "running") return;
+  const now = audio.currentTime;
+  if (height >= ALL_DICE) {
+    SCALE.forEach((f, i) => note(f, now + i * 0.09, 0.2)); // a run up the scale for the full tower
+    note(SCALE[SCALE.length - 1] * 1.5, now + SCALE.length * 0.09, 0.25);
+  } else {
+    note(SCALE[Math.min(height - 2, SCALE.length - 1)], now);
+  }
+}
+
+// A die is on another die when the two touch and the contact points mostly up and down.
+// The physics engine skips contacts between two sleeping dice, so a sleeping die keeps
+// the dice it rested on before it fell asleep.
+const restsOn = new Map(); // die -> set of dice under it
+function readContacts() {
+  const held = drag && drag.toy;
+  const dieOf = new Map(toys.filter((t) => t.die && t !== held).map((t) => [t.body, t]));
+  const fresh = new Map();
+  for (const c of world.contacts) {
+    const a = dieOf.get(c.bi);
+    const b = dieOf.get(c.bj);
+    if (!a || !b || Math.abs(c.ni.y) < 0.7) continue;
+    const [upper, lower] = a.body.position.y > b.body.position.y ? [a, b] : [b, a];
+    if (!fresh.has(upper)) fresh.set(upper, new Set());
+    fresh.get(upper).add(lower);
+  }
+  for (const t of toys) {
+    if (!t.die) continue;
+    if (t === held) restsOn.delete(t);
+    else if (t.body.sleepState !== CANNON.Body.SLEEPING || !restsOn.has(t)) restsOn.set(t, fresh.get(t) ?? new Set());
+  }
+}
+
+// Height of the tallest tower: the longest chain of dice, each on the one under it
+function tallestStack() {
+  const memo = new Map();
+  const level = (t, path = new Set()) => {
+    if (memo.has(t)) return memo.get(t);
+    if (path.has(t)) return 1;
+    path.add(t);
+    let l = 1;
+    for (const under of restsOn.get(t) ?? []) if (restsOn.has(under)) l = Math.max(l, level(under, path) + 1);
+    memo.set(t, l);
+    return l;
+  };
+  let tallest = 0;
+  for (const t of restsOn.keys()) tallest = Math.max(tallest, level(t));
   return tallest;
 }
 
-function celebrate(height) {
-  const all = height >= 7;
-  win.querySelector("h2").textContent = all ? "All 7 dice in one tower!" : `A tower of ${height} dice!`;
-  win.querySelector(".win-text").textContent = all
-    ? "That is a natural 20 on patience. Send me a screenshot, I want to see it."
-    : "Most visitors only throw the dice. Can you stack all 7? The d4 has to go on top.";
-  if (!win.open) win.showModal();
-}
+// Contacts switch on and off for a frame or two while dice bounce and settle. So a new height
+// must hold for a moment before it counts: a short moment to go up, a longer one to go down.
+let candidate = 0;
+let candidateSince = 0;
 
 function updateStack() {
+  readContacts();
   const height = tallestStack();
-  if (height === shownStack) return;
-  shownStack = height;
-  if (height >= 2) counter.hidden = false; // the counter stays hidden until the first stack
-  if (height > bestStack) {
-    bestStack = height;
-    localStorage.setItem("bestStack", String(bestStack));
+  const now = performance.now();
+  if (height !== candidate) {
+    candidate = height;
+    candidateSince = now;
   }
-  const next = GOALS.find((g) => g > bestStack) ?? "7, done";
-  counter.querySelector(".now").textContent = height;
-  counter.querySelector(".best").textContent = bestStack;
-  counter.querySelector(".goal").textContent = next;
-  const reached = GOALS.filter((g) => height >= g && !celebrated.has(g));
-  if (reached.length) {
-    reached.forEach((g) => celebrated.add(g));
-    celebrate(height);
+  if (height === shownStack || now - candidateSince < (height > shownStack ? 150 : 500)) return;
+  if (height > shownStack && height >= 2) playProgress(height);
+  shownStack = height;
+  if (height >= ALL_DICE && !celebrated) {
+    celebrated = true;
+    if (!win.open) win.showModal();
   }
 }
 
 // ---------- Main loop ----------
 
 let last = performance.now();
-let stackTick = 0;
 function frame(now) {
   const dt = Math.min((now - last) / 1000, 1 / 20);
   last = now;
@@ -646,17 +831,25 @@ function frame(now) {
     const b = drag.toy.body;
     const step = Math.max(dt, 1 / 240);
     const lift = holdHeight(drag.toy, target.x, target.z);
-    const y = b.position.y + (lift - b.position.y) * Math.min(1, step * 14);
+    // At a normal speed a held die rises over other dice at once. Swept fast, it rises slowly
+    // and crashes into them. That is on purpose: it is part of the game.
+    const [a, z] = drag.samples.slice(-2);
+    const speed = a && z && z.t > a.t ? Math.hypot(z.x - a.x, z.z - a.z) / ((z.t - a.t) / 1000) : 0;
+    const climbAtOnce = lift > b.position.y && speed < 25; // 25 units/s is about 1,250 px/s
+    const y = climbAtOnce ? lift : b.position.y + (lift - b.position.y) * Math.min(1, step * 10);
     b.velocity.set((target.x - b.position.x) / step, (y - b.position.y) / step, (target.z - b.position.z) / step);
     b.position.set(target.x, y, target.z);
     b.quaternion.copy(drag.turn);
     b.angularVelocity.setZero();
     b.wakeUp();
+    drag.at = b.position.clone();
   }
 
-  world.step(1 / 120, dt, 10);
+  world.step(1 / 180, dt, 12);
   if (drag) {
-    // Contacts during the step must not turn the held toy
+    // The step moves and turns the held toy; put it back exactly under the pointer.
+    // Its velocity stays, so it still pushes other dice out of the way.
+    drag.toy.body.position.copy(drag.at);
     drag.toy.body.quaternion.copy(drag.turn);
     drag.toy.body.angularVelocity.setZero();
   }
@@ -675,14 +868,16 @@ function frame(now) {
   }
   if (awake) renderer.render(scene, camera);
   dirty = false;
-  if (++stackTick % 15 === 0) updateStack(); // four times a second is enough
+  updateStack(); // contacts only describe the last physics step, so read them every frame
   requestAnimationFrame(frame);
 }
 
 await document.fonts.load('800 60px "Alegreya Sans"');
 createToys();
 resize();
-placeToys();
-window.addEventListener("resize", resize);
-new ResizeObserver(resize).observe(document.body); // the page gets taller when fonts load
+placeIfUntouched();
+const onLayout = () => { resize(); placeIfUntouched(); };
+window.addEventListener("resize", onLayout);
+window.addEventListener("load", onLayout);
+new ResizeObserver(onLayout).observe(document.body); // the page gets taller when fonts and images load
 requestAnimationFrame(frame);

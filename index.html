@@ -27,18 +27,22 @@
       min-height: 100vh;
       color: var(--ink);
       font: 400 1.05rem/1.45 var(--text);
-      /* Battle map: a grassy field with a 5 ft grid. Grass texture: ambientCG Grass005, CC0 */
-      background-color: #4a6b26;
-      background-image:
-        linear-gradient(rgba(0, 0, 0, 0.3) 1.5px, transparent 1.5px),
-        linear-gradient(90deg, rgba(0, 0, 0, 0.3) 1.5px, transparent 1.5px),
-        linear-gradient(rgba(18, 32, 8, 0.32), rgba(18, 32, 8, 0.32)),
-        url("assets/grass.jpg");
-      background-size: 48px 48px, 48px 48px, auto, 384px 384px;
     }
-    body::before {
+    /* Battle map: a forest road drawn as an SVG by tools/make-map.mjs, so it stays sharp at any size.
+       It is about the shape of the page, so one copy covers the whole page and scrolls with it,
+       with the road down the middle behind the sheet. */
+    html { background: #5a7d2a url("assets/forest-road.svg") center top / cover no-repeat; }
+    /* A phone page is far taller than the map, so there the map stays fixed behind the window instead */
+    @media (max-width: 680px) {
+      html { background-image: none; }
+      body::before {
+        content: ""; position: fixed; inset: 0; pointer-events: none; z-index: -1;
+        background: url("assets/forest-road.svg") center / cover no-repeat;
+      }
+    }
+    body::after {
       content: ""; position: fixed; inset: 0; pointer-events: none; z-index: -1;
-      background: radial-gradient(ellipse at 50% 40%, transparent 45%, rgba(0, 0, 0, 0.4) 100%);
+      background: radial-gradient(ellipse at 50% 45%, transparent 50%, rgba(0, 0, 0, 0.35) 100%);
     }
     main { max-width: 62rem; margin: 0 auto; padding: 3rem 1rem 4rem; }
     a { color: var(--link); text-underline-offset: 0.15em; }
@@ -137,15 +141,7 @@
     /* 3D dice and pencil: a see-through layer over the page */
     #table { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 5; }
 
-    /* Easter egg: dice tower counter and the congratulations card */
-    .stack-counter {
-      position: fixed; left: 1rem; bottom: 1rem; z-index: 6;
-      background: var(--paper); color: var(--pencil); border: 1.5px solid var(--ink); border-radius: 10px;
-      padding: 0.45rem 0.8rem; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
-      display: flex; align-items: baseline; gap: 0.6rem;
-    }
-    .stack-counter .now { font: 800 1.6rem/1 var(--text); }
-    .stack-counter small { font: 500 0.8rem/1.2 var(--label); color: var(--faded); }
+    /* Easter egg: the card for a tower of all 7 dice */
     .win {
       max-width: 26rem; padding: 1.75rem 1.75rem 1.4rem; text-align: center;
       background: var(--paper); color: var(--pencil);
@@ -166,6 +162,10 @@
     @media (prefers-reduced-motion: reduce) { .win[open] { animation: none; } }
     .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
+    /* Below about 1200 px the side margins are too narrow for the dice, so they start under the footer */
+    @media (max-width: 1199px) {
+      main { padding-bottom: 15rem; }
+    }
     @media (max-width: 860px) {
       .top, .body { grid-template-columns: 1fr; }
       .abilities { grid-template-columns: repeat(3, 1fr); row-gap: 1.6rem; }
@@ -176,7 +176,6 @@
       .sheet { padding: 1.5rem 1rem 1.25rem; }
       .fields, .traits { grid-template-columns: 1fr; }
       .abilities { grid-template-columns: repeat(2, 1fr); }
-      main { padding-bottom: 10rem; }
     }
   </style>
 </head>
@@ -314,7 +313,7 @@
       <a href="https://linkedin.com/in/haziqhilmi">LinkedIn</a>
       <a href="https://github.com/haziqhilmismail">GitHub</a>
     </p>
-    <p class="hint">Drag a die and let go to throw it. Click a die to roll it.</p>
+    <p class="hint">Drag a die and let go to throw it. Tap or click a die to roll it.</p>
     <p class="controls">
       <button type="button" id="roll-all">Roll all dice</button>
     </p>
@@ -323,20 +322,12 @@
 
 <canvas id="table" aria-hidden="true"></canvas>
 
-<div class="stack-counter" id="stack-counter" hidden aria-live="polite">
-  <span class="lbl">Dice tower</span>
-  <span class="now">0</span>
-  <small>best <b class="best">0</b>, goal <b class="goal">5</b></small>
-</div>
-
 <dialog class="win" id="stack-win" aria-labelledby="win-title">
-  <p class="lbl">Easter egg found</p>
   <p class="die-mark" aria-hidden="true">&#127922;</p>
-  <h2 id="win-title">A tower of 5 dice!</h2>
-  <p class="win-text"></p>
+  <h2 id="win-title">All 7 dice in one tower!</h2>
+  <p class="win-text">Congrats! Now you are <strong>required</strong> to connect with me on <a href="https://www.linkedin.com/in/haziqhilmi">LinkedIn</a> :)</p>
   <form method="dialog" class="actions">
-    <button>Keep stacking</button>
-    <a href="mailto:muhd.haziq.b.hilmi@gmail.com?subject=I%20stacked%20your%20dice">Email me</a>
+    <button autofocus>Keep stacking</button>
   </form>
 </dialog>
 <p class="sr-only" aria-live="polite" id="roll-result"></p>
