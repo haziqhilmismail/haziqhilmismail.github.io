@@ -5,6 +5,11 @@ import * as CANNON from "cannon-es";
 
 // CSS pixels per world unit. Fewer on a phone, so the dice are smaller there.
 const PX = window.innerWidth < 600 ? 38 : 50;
+
+// The size of the visible window, the same space that pointer clientX and clientY use:
+// without the scrollbar, and the current height while a phone hides or shows its address bar
+const viewWidth = () => document.documentElement.clientWidth;
+const viewHeight = () => window.innerHeight;
 const LIFT = 0.25;       // gap under a die while you hold it
 const DIE_COLOR = 0x9b1c2e;
 const INK_COLOR = "#f4d77e";
@@ -312,7 +317,7 @@ let cameraScroll = -1;
 function followScroll() {
   if (window.scrollY === cameraScroll) return;
   cameraScroll = window.scrollY;
-  const z = (cameraScroll + window.innerHeight / 2) / PX;
+  const z = (cameraScroll + viewHeight() / 2) / PX;
   camera.position.z = z;
   sun.position.set(-3, 30, z - 4); // nearly overhead, so a lifted die's shadow stays under it
   sun.target.position.set(0, 0, z);
@@ -320,11 +325,11 @@ function followScroll() {
 }
 
 function resize() {
-  const w = window.innerWidth / PX;
-  const h = window.innerHeight / PX;
+  const w = viewWidth() / PX;
+  const h = viewHeight() / PX;
   const page = document.documentElement.scrollHeight / PX;
   view = { w, h, page };
-  renderer.setSize(window.innerWidth, window.innerHeight, false);
+  renderer.setSize(viewWidth(), viewHeight()); // also sets the canvas CSS size, so drawing and pointer match
   Object.assign(camera, { left: -w / 2, right: w / 2, top: h / 2, bottom: -h / 2 });
   camera.updateProjectionMatrix();
   const s = sun.shadow.camera;
@@ -409,7 +414,7 @@ function createToys() {
 // x and y here are page pixels.
 function placeToys() {
   const sheet = document.querySelector(".sheet").getBoundingClientRect();
-  const W = window.innerWidth;
+  const W = viewWidth();
   const top = sheet.top + window.scrollY;
   const below = document.querySelector("footer").getBoundingClientRect().bottom + window.scrollY;
   const dice = toys.filter((t) => t.die);
@@ -515,7 +520,7 @@ const pointer = new THREE.Vector2();
 const pickables = () => toys.map((t) => t.group);
 
 function toyAt(clientX, clientY) {
-  pointer.set((clientX / window.innerWidth) * 2 - 1, -(clientY / window.innerHeight) * 2 + 1);
+  pointer.set((clientX / viewWidth()) * 2 - 1, -(clientY / viewHeight()) * 2 + 1);
   raycaster.setFromCamera(pointer, camera);
   const hit = raycaster.intersectObjects(pickables(), true)[0];
   return hit ? hit.object.userData.toy : null;
@@ -698,7 +703,7 @@ function knock(volume) {
   const gain = audio.createGain();
   source.buffer = knocks[Math.floor(Math.random() * knocks.length)];
   source.playbackRate.value = 1.1 + Math.random() * 0.3; // a pencil is lighter than a plank
-  gain.gain.value = volume * 0.7;
+  gain.gain.value = volume * 0.35; // about half as loud as before
   source.connect(gain).connect(audio.destination);
   source.start();
 }
@@ -808,14 +813,24 @@ function updateStack() {
     candidate = height;
     candidateSince = now;
   }
-  if (height === shownStack || now - candidateSince < (height > shownStack ? 150 : 500)) return;
-  if (height > shownStack && height >= 2) playProgress(height);
-  shownStack = height;
-  if (height >= ALL_DICE && !celebrated) {
-    celebrated = true;
-    if (!win.open) win.showModal();
+  if (height !== shownStack && now - candidateSince >= (height > shownStack ? 150 : 500)) {
+    if (height > shownStack && height >= 2) playProgress(height);
+    shownStack = height;
+  }
+  // The card waits until the full tower has stood still for a whole second
+  const allStill = !drag && toys.every((t) => !t.die ||
+    (t.body.velocity.length() < 0.15 && t.body.angularVelocity.length() < 0.3));
+  if (shownStack >= ALL_DICE && allStill) {
+    stillSince ||= now;
+    if (!celebrated && now - stillSince >= 1000) {
+      celebrated = true;
+      if (!win.open) win.showModal();
+    }
+  } else {
+    stillSince = 0;
   }
 }
+let stillSince = 0;
 
 // ---------- Main loop ----------
 
@@ -826,6 +841,9 @@ function frame(now) {
   followScroll();
 
   if (drag) {
+    // Keep every toy awake while one is held. A sleeping die ignores that the die under it is
+    // gone, so without this a tower would float when you pull out its bottom die.
+    for (const t of toys) t.body.wakeUp();
     // Recompute from the window position each frame, so a held die stays under the pointer while the page scrolls
     const target = screenToWorld(drag.clientX, drag.clientY);
     const b = drag.toy.body;
