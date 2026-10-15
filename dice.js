@@ -280,7 +280,8 @@ const world = new CANNON.World({ gravity: new CANNON.Vec3(0, -60, 0), allowSleep
 const tableMaterial = new CANNON.Material("table");
 const diceMaterial = new CANNON.Material("dice");
 world.addContactMaterial(new CANNON.ContactMaterial(tableMaterial, diceMaterial, { friction: 0.35, restitution: 0.35 }));
-world.addContactMaterial(new CANNON.ContactMaterial(diceMaterial, diceMaterial, { friction: 0.2, restitution: 0.5 }));
+// Grippy and not bouncy between dice, so a stack stays up
+world.addContactMaterial(new CANNON.ContactMaterial(diceMaterial, diceMaterial, { friction: 0.6, restitution: 0.1 }));
 
 function staticPlane(rotate) {
   const body = new CANNON.Body({ type: CANNON.Body.STATIC, shape: new CANNON.Plane(), material: tableMaterial });
@@ -490,7 +491,11 @@ function startDrag(e) {
   if (!toy) return;
   e.preventDefault();
   const p = screenToWorld(e.clientX, e.clientY);
-  drag = { toy, clientX: e.clientX, clientY: e.clientY, startX: e.clientX, startY: e.clientY, moved: false, samples: [{ ...p, t: performance.now() }] };
+  drag = {
+    toy, clientX: e.clientX, clientY: e.clientY, startX: e.clientX, startY: e.clientY, moved: false,
+    samples: [{ ...p, t: performance.now() }],
+    turn: toy.body.quaternion.clone(), // a held toy keeps the rotation it had when you picked it up
+  };
   toy.body.wakeUp();
   if (toy.die) toy.rolling = false;
   document.documentElement.style.cursor = "grabbing";
@@ -524,7 +529,30 @@ function endDrag() {
   const first = recent[0] || samples[samples.length - 1];
   const last = samples[samples.length - 1];
   const dt = Math.max((last.t - first.t) / 1000, 1 / 60);
-  throwToy(toy, (last.x - first.x) / dt, (last.z - first.z) / dt);
+  const vx = (last.x - first.x) / dt;
+  const vz = (last.z - first.z) / dt;
+  if (Math.hypot(vx, vz) > 8) {
+    throwToy(toy, vx, vz);
+    return;
+  }
+  // A slow release puts the toy down where it is, with no spin, so you can stack dice
+  toy.body.velocity.setZero();
+  toy.body.angularVelocity.setZero();
+  toy.body.wakeUp();
+  if (toy.die) { toy.rolling = true; toy.inThrow = true; toy.glow = 0; }
+}
+
+// Hold a toy just above whatever is under it, so you can drop it onto a stack
+const reachOf = (toy) => (toy.die ? toy.die.radius : 1.8);
+const heightOf = (toy) => (toy.die ? toy.die.radius : 0.15);
+function holdHeight(toy, x, z) {
+  let top = 0;
+  for (const other of toys) {
+    if (other === toy) continue;
+    const p = other.body.position;
+    if (Math.hypot(p.x - x, p.z - z) < reachOf(toy) + reachOf(other) * 0.9) top = Math.max(top, p.y + heightOf(other));
+  }
+  return Math.max(LIFT, top + heightOf(toy) + 0.25);
 }
 
 window.addEventListener("pointerdown", startDrag);
@@ -554,14 +582,21 @@ function frame(now) {
     const target = screenToWorld(drag.clientX, drag.clientY);
     const b = drag.toy.body;
     const step = Math.max(dt, 1 / 240);
-    const y = b.position.y + (LIFT - b.position.y) * Math.min(1, step * 14);
+    const lift = holdHeight(drag.toy, target.x, target.z);
+    const y = b.position.y + (lift - b.position.y) * Math.min(1, step * 14);
     b.velocity.set((target.x - b.position.x) / step, (y - b.position.y) / step, (target.z - b.position.z) / step);
     b.position.set(target.x, y, target.z);
-    b.angularVelocity.set(2.5, 1, 1.8);
+    b.quaternion.copy(drag.turn);
+    b.angularVelocity.setZero();
     b.wakeUp();
   }
 
   world.step(1 / 120, dt, 10);
+  if (drag) {
+    // Contacts during the step must not turn the held toy
+    drag.toy.body.quaternion.copy(drag.turn);
+    drag.toy.body.angularVelocity.setZero();
+  }
 
   let awake = !!drag || dirty;
   for (const toy of toys) {
