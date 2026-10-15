@@ -229,7 +229,7 @@
             <ul class="points">
               <li>Moved an enterprise client's data platform from SQL Server to Microsoft Fabric. I built the ETL pipelines on a medallion architecture: raw data lands in a Lakehouse, gets cleaned, and ends in a curated Warehouse layer.</li>
               <li>Wrote SQL stored procedures on the curated layer that feed the client's dashboards for sales, customer feedback and employee analytics, with KPIs such as sales against budget, survey NPS, audit scores and staff turnover.</li>
-              <li>Built a read-only query service over the Fabric SQL endpoint, so people can ask data questions in plain language through AI assistants. Each query must be a single <code>SELECT</code>, results stop at 1,000 rows, and the connection itself is read-only.</li>
+              <li>Built a read-only query service over the Fabric SQL endpoint, so people can ask data questions in plain language through AI assistants.</li>
               <li>Built a crawler that collects social media posts, mentions and comments through RapidAPI and stores them in MongoDB.</li>
               <li>Moved the crawl pipeline from cron jobs to Apache Airflow. It now runs about 2,000 crawl jobs a day, and a failed task shows its own error and retries by itself, so nobody has to SSH into each worker to debug it.</li>
               <li>Set up a self-hosted Kubernetes cluster on 10 mini PCs. It serves the FastAPI endpoints that Airflow calls for data processing, and I watch its health in Headlamp.</li>
