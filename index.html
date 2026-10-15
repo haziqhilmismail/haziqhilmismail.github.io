@@ -116,6 +116,9 @@
       box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
     }
     .traits { display: grid; grid-template-columns: 1fr 1fr; gap: 1.4rem 1rem; }
+    .equipment { margin-top: 1.6rem; }
+    .projects { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; align-items: start; }
+    .projects .entry + .entry { margin-top: 0; }
     .traits p { font-size: 1.25rem; line-height: 1.2; }
 
     /* Under the sheet */
@@ -138,6 +141,8 @@
     @media (max-width: 860px) {
       .top, .body { grid-template-columns: 1fr; }
       .abilities { grid-template-columns: repeat(3, 1fr); row-gap: 1.6rem; }
+      .projects { grid-template-columns: 1fr; }
+      .projects .entry + .entry { margin-top: 0.4rem; }
     }
     @media (max-width: 520px) {
       .sheet { padding: 1.5rem 1rem 1.25rem; }
@@ -226,28 +231,6 @@
         </section>
 
         <section class="box">
-          <h2 class="lbl">Equipment</h2>
-          <div class="entry">
-            <h3><a href="https://mtgscanner.online">MTG Card Scanner</a></h3>
-            <span class="when">Web app, live at mtgscanner.online</span>
-            <a class="shot" href="https://mtgscanner.online"><img src="assets/mtg-scanner.jpg" width="1280" height="800" loading="lazy" alt="MTG Card Scanner sign-in page with the heading Snap. Price. Post. and a sample scan of four cards"></a>
-            <p>Take one photo of a pile of Magic cards, and it names and prices each card. I use it when I sell cards at night markets. Gemini, Scryfall, Card Kingdom, FastAPI, React.</p>
-          </div>
-          <div class="entry">
-            <h3>Home Server</h3>
-            <span class="when">Built for RM1,500 from second-hand parts</span>
-            <a class="shot" href="assets/home-server.jpg"><img src="assets/home-server.jpg" width="1000" height="1126" loading="lazy" alt="Homer dashboard of the home server, Lab Rumah, with Immich, Jellyfin, a TNB electricity dashboard, a transit feed tool, two AI agent tools, Proxmox and TrueNAS"></a>
-            <p>Proxmox with TrueNAS and 24 Docker containers. Immich and Jellyfin keep 3.2 TB of my family's photos and media. Tailscale for remote access.</p>
-          </div>
-          <div class="entry">
-            <h3><a href="https://github.com/haziqhilmismail/afk-minimize">AFK Minimize</a></h3>
-            <span class="when">RuneLite plugin for Old School RuneScape</span>
-            <div class="shot"><video src="assets/afk-minimize.mp4" poster="assets/afk-minimize.jpg" width="960" height="540" autoplay muted loop playsinline aria-label="A full desktop with a YouTube video open. The RuneLite client jumps to the front when the inventory is full, the view zooms in, and after one click on a rock a timer counts down from green to red. The client minimizes and the view zooms back out"></video></div>
-            <p>When my inventory fills up while I AFK mine, the game jumps to the front. I click a rock, and a second later it minimizes itself and I am back in my other window. Java, RuneLite.</p>
-          </div>
-        </section>
-
-        <section class="box">
           <h2 class="lbl">Personality</h2>
           <div class="traits">
             <div><span class="lbl">Trait</span><p>I would rather host it myself than pay for it.</p></div>
@@ -258,6 +241,30 @@
         </section>
       </div>
     </div>
+
+    <section class="box equipment">
+      <h2 class="lbl">Equipment</h2>
+      <div class="projects">
+        <div class="entry">
+          <h3><a href="https://mtgscanner.online">MTG Card Scanner</a></h3>
+          <span class="when">Web app, live at mtgscanner.online</span>
+          <a class="shot" href="https://mtgscanner.online"><img src="assets/mtg-scanner.jpg" width="1280" height="800" loading="lazy" alt="MTG Card Scanner sign-in page with the heading Snap. Price. Post. and a sample scan of four cards"></a>
+          <p>Take one photo of a pile of Magic cards, and it names and prices each card. I use it when I sell cards at night markets. Gemini, Scryfall, Card Kingdom, FastAPI, React.</p>
+        </div>
+        <div class="entry">
+          <h3>Home Server</h3>
+          <span class="when">Built for RM1,500 from second-hand parts</span>
+          <a class="shot" href="assets/home-server.jpg"><img src="assets/home-server.jpg" width="1000" height="1126" loading="lazy" alt="Homer dashboard of the home server, Lab Rumah, with Immich, Jellyfin, a TNB electricity dashboard, a transit feed tool, two AI agent tools, Proxmox and TrueNAS"></a>
+          <p>Proxmox with TrueNAS and 24 Docker containers. Immich and Jellyfin keep 3.2 TB of my family's photos and media. Tailscale for remote access.</p>
+        </div>
+        <div class="entry">
+          <h3><a href="https://github.com/haziqhilmismail/afk-minimize">AFK Minimize</a></h3>
+          <span class="when">RuneLite plugin for Old School RuneScape</span>
+          <div class="shot"><video src="assets/afk-minimize.mp4" poster="assets/afk-minimize.jpg" width="960" height="540" autoplay muted loop playsinline aria-label="A full desktop with a YouTube video open. The RuneLite client jumps to the front when the inventory is full, the view zooms in, and after one click on a rock a timer counts down from green to red. The client minimizes and the view zooms back out"></video></div>
+          <p>When my inventory fills up while I AFK mine, the game jumps to the front. I click a rock, and a second later it minimizes itself and I am back in my other window. Java, RuneLite.</p>
+        </div>
+      </div>
+    </section>
   </article>
 
   <footer>
