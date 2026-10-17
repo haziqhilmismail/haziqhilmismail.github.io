@@ -73,10 +73,14 @@
     .name h1 { font: 800 2.5rem/1.1 var(--text); border-bottom: 1.5px solid var(--ink); padding-bottom: 0.1rem; }
     .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem 1.5rem; }
     .fields p { font-size: 1.15rem; line-height: 1.35; border-bottom: 1px solid var(--ink); }
+    .fields .contact { grid-column: 1 / -1; }
     .name .lbl, .fields .lbl { display: block; margin-top: 0.2rem; }
 
+    .backstory { margin-top: 1.6rem; }
+    .backstory p { font-size: 1.15rem; line-height: 1.5; max-width: 48rem; }
+
     /* Ability scores */
-    .abilities { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.8rem; margin: 2rem 0 2.2rem; }
+    .abilities { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.8rem; margin: 1.6rem 0 2.2rem; }
     .ability {
       border: 1.5px solid var(--ink); border-radius: 12px; text-align: center;
       padding: 0.55rem 0.3rem 1rem; position: relative;
@@ -97,7 +101,6 @@
     .bonus span:first-child { font: 700 1.25rem/1 var(--text); border: 1.5px solid var(--ink); border-radius: 8px; padding: 0.2rem 0.5rem; }
     .skills { list-style: none; margin: 0; padding: 0; }
     .skills li { display: flex; align-items: baseline; gap: 0.45rem; font: 500 0.9rem/1.7 var(--label); color: var(--ink); }
-    .skills .v { flex: 0 0 1.9rem; text-align: center; border-bottom: 1px solid var(--ink); font: 500 0.95rem/1.35 var(--text); color: var(--pencil); }
     .skills small { color: var(--faded); font-size: 0.72rem; margin-left: auto; }
     .dot { flex: 0 0 0.65rem; height: 0.65rem; border: 1.3px solid var(--ink); border-radius: 50%; align-self: center; }
     .dot.on { background: var(--pencil); }
@@ -107,7 +110,7 @@
     /* Experience, projects, personality */
     .entry + .entry { margin-top: 0.9rem; }
     .entry h3 { font: 700 1.15rem/1.3 var(--text); }
-    .entry .when { display: block; margin: 0.1rem 0 0.15rem; font: 500 0.75rem/1.3 var(--label); color: var(--faded); text-transform: uppercase; letter-spacing: 0.05em; }
+    .entry .when { display: block; margin: 0.1rem 0 0.15rem; font: 500 0.75rem/1.3 var(--label); color: var(--faded); }
     .entry p { font-size: 1rem; line-height: 1.5; }
     .points { margin: 0.3rem 0 0; padding-left: 1.1rem; }
     .points li { margin-bottom: 0.4rem; line-height: 1.5; }
@@ -192,8 +195,14 @@
         <div><p>Computer Science (AI)</p><span class="lbl">Background</span></div>
         <div><p>Selangor, Malaysia</p><span class="lbl">Home</span></div>
         <div><p>Malay, English</p><span class="lbl">Languages</span></div>
+        <div class="contact"><p><a href="mailto:muhd.haziq.b.hilmi@gmail.com">muhd.haziq.b.hilmi@gmail.com</a>, <a href="https://linkedin.com/in/haziqhilmi">LinkedIn</a>, <a href="https://github.com/haziqhilmismail">GitHub</a></p><span class="lbl">Contact</span></div>
       </div>
     </header>
+
+    <section class="backstory">
+      <span class="lbl">Backstory</span>
+      <p>I build and run data pipelines from end to end. I moved an enterprise client's data platform to Microsoft Fabric, run about 2,000 crawl jobs a day on Airflow, and keep a 10-node Kubernetes cluster&nbsp;up.</p>
+    </section>
 
     <section class="abilities" aria-label="Ability scores">
       <div class="ability"><span class="lbl">Data engineering</span><span class="mod">+3</span><span class="score">16</span></div>
@@ -210,30 +219,27 @@
           <h2 class="lbl">Skills</h2>
           <div class="bonus"><span>+2</span><span class="lbl">Proficiency bonus</span></div>
           <ul class="skills">
-            <li><i class="dot on"></i><span class="v">+5</span>Airflow<small>Data</small></li>
-            <li><i class="dot"></i><span class="v">+3</span>Spark<small>Data</small></li>
-            <li><i class="dot on"></i><span class="v">+5</span>Microsoft Fabric<small>Data</small></li>
-            <li><i class="dot on"></i><span class="v">+4</span>Kubernetes<small>Infra</small></li>
-            <li><i class="dot on"></i><span class="v">+4</span>Docker<small>Infra</small></li>
-            <li><i class="dot on"></i><span class="v">+4</span>Linux<small>Infra</small></li>
-            <li><i class="dot on"></i><span class="v">+4</span>Proxmox<small>Infra</small></li>
-            <li><i class="dot on"></i><span class="v">+4</span>Python<small>Code</small></li>
-            <li><i class="dot on"></i><span class="v">+4</span>FastAPI<small>Code</small></li>
-            <li><i class="dot"></i><span class="v">+2</span>TypeScript<small>Code</small></li>
-            <li><i class="dot"></i><span class="v">+2</span>React<small>Code</small></li>
-            <li><i class="dot on"></i><span class="v">+4</span>SQL<small>Databases</small></li>
-            <li><i class="dot on"></i><span class="v">+4</span>MSSQL<small>Databases</small></li>
-            <li><i class="dot on"></i><span class="v">+4</span>MongoDB<small>Databases</small></li>
-            <li><i class="dot on"></i><span class="v">+3</span>AWS<small>Cloud</small></li>
-            <li><i class="dot on"></i><span class="v">+3</span>Gemini API<small>ML</small></li>
-            <li><i class="dot"></i><span class="v">+1</span>PyTorch<small>ML</small></li>
+            <li><i class="dot on"></i>Airflow<small>Data</small></li>
+            <li><i class="dot"></i>Spark<small>Data</small></li>
+            <li><i class="dot on"></i>Microsoft Fabric<small>Data</small></li>
+            <li><i class="dot on"></i>Kubernetes<small>Infra</small></li>
+            <li><i class="dot on"></i>Docker<small>Infra</small></li>
+            <li><i class="dot on"></i>Linux<small>Infra</small></li>
+            <li><i class="dot on"></i>Proxmox<small>Infra</small></li>
+            <li><i class="dot on"></i>Python<small>Code</small></li>
+            <li><i class="dot on"></i>FastAPI<small>Code</small></li>
+            <li><i class="dot on"></i>SQL<small>Databases</small></li>
+            <li><i class="dot on"></i>MSSQL<small>Databases</small></li>
+            <li><i class="dot on"></i>MongoDB<small>Databases</small></li>
+            <li><i class="dot on"></i>AWS<small>Cloud</small></li>
+            <li><i class="dot on"></i>Gemini API<small>ML</small></li>
           </ul>
           <p class="key"><span><i class="dot on"></i> Daily use</span><span><i class="dot"></i> Some use</span></p>
         </section>
 
         <section class="box">
           <h2 class="lbl">Other proficiencies</h2>
-          <p>MySQL, Redshift, DynamoDB, TrueNAS, Caddy, Tailscale, Vercel, Fly.io, Git, Jira. CCNA: Introduction to Networks (Cisco).</p>
+          <p>TypeScript, React, PyTorch, MySQL, Redshift, DynamoDB, TrueNAS, Caddy, Tailscale, Vercel, Fly.io, Git, Jira. CCNA: Introduction to Networks (Cisco).</p>
         </section>
 
         <section class="box">
@@ -242,7 +248,7 @@
             <div><span class="lbl">Trait</span><p>I would rather host it myself than pay for it.</p></div>
             <div><span class="lbl">Ideal</span><p>Automation. If I do it twice by hand, the third time a script does it.</p></div>
             <div><span class="lbl">Bond</span><p>My family uses my home server every day.</p></div>
-            <div><span class="lbl">Flaw</span><p>I ... cannot ... stop ..vibecoding..</p></div>
+            <div><span class="lbl">Flaw</span><p>I rebuild my home server more often than I need to.</p></div>
           </div>
         </section>
       </div>
