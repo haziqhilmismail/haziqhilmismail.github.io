@@ -126,6 +126,9 @@
     .equipment { margin-top: 1.6rem; }
     .projects { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; align-items: start; }
     .projects .entry + .entry { margin-top: 0; }
+    .trinkets { margin-top: 1.4rem; }
+    .trinkets .points { columns: 2 18rem; column-gap: 1.5rem; }
+    .trinkets .points li { break-inside: avoid; }
     .traits p { font-size: 1rem; line-height: 1.5; }
 
     /* Under the sheet */
@@ -314,6 +317,16 @@
           <div class="shot"><video src="assets/afk-minimize-v4.mp4" poster="assets/afk-minimize-v4.jpg" width="960" height="540" autoplay muted loop playsinline aria-label="A full desktop with a GitHub page open. The RuneLite client jumps to the front when the inventory is full, the view zooms in, and after one click on a rock a timer counts down from green to red. The client minimizes and the view zooms back out"></video></div>
           <p>When my inventory fills up while I AFK mine, the game jumps to the front. I click a rock, and a second later it minimizes itself and I am back in my other window. Java, RuneLite.</p>
         </div>
+      </div>
+      <div class="trinkets">
+        <h2 class="lbl">Trinkets</h2>
+        <ul class="points">
+          <li><a href="https://github.com/haziqhilmismail/my-tnb"><strong>Rumah Power Log</strong></a>: every 6 hours it pulls my house's smart-meter readings from myTNB, and shows the cost, the weekday pattern and the bill history. Docker Compose, Caddy, Python.</li>
+          <li><a href="https://github.com/haziqhilmismail/concert-notifier"><strong>Concert Notifier</strong></a>: it watches Google News for the artists that I follow. Claude keeps only the concert news for Malaysia and Singapore, and I get each one on Telegram. Python, systemd.</li>
+          <li><a href="https://github.com/haziqhilmismail/complainerr"><strong>Complainerr</strong></a>: a Python CLI that files complaints on SISPAA, the Malaysian public complaint portal. I use it to report potholes and illegal parking to the council.</li>
+          <li><a href="https://github.com/haziqhilmismail/tower-infra"><strong>tower-infra</strong></a>: the configs of my home server. A daily backup goes to Backblaze B2, and a weekly test restores part of it and compares it byte by byte.</li>
+          <li><a href="https://github.com/haziqhilmismail/mtg-deck-building"><strong>MTG Deck Building</strong></a>: a Claude Code skill for Commander decks. It finds cuts and upgrades with Card Kingdom prices, and plays test games with a real shuffle.</li>
+        </ul>
       </div>
     </section>
   </article>
